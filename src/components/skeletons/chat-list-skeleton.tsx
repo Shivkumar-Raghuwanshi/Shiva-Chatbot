@@ -1,3 +1,4 @@
+// src\components\skeletons\chat-list-skeleton.tsx
 import { Skeleton } from "@/components/ui/skeleton"
 
 export function ChatListSkeleton() {

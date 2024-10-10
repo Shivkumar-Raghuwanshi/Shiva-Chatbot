@@ -1,3 +1,5 @@
+// src\app\chat\layout.tsx
+
 import { Header } from "@/components/layout/header"
 import { Sidebar } from "@/components/layout/sidebar"
 import { prisma } from "@/lib/prisma"

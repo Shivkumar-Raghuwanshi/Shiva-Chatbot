@@ -1,8 +1,11 @@
+// src\app\layout.tsx
+
 import { ThemeProvider } from "@/components/providers/theme-provider"
 import AuthProvider from "@/components/providers/auth-provider"
 import type { Metadata } from "next"
 import { Inter } from "next/font/google"
 import "./globals.css"
+import { Toaster } from "@/components/ui/toaster"
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -28,7 +31,9 @@ export default function RootLayout({
           <AuthProvider>
             {children}
           </AuthProvider>
+          <Toaster />
         </ThemeProvider>
+        
       </body>
     </html>
   )

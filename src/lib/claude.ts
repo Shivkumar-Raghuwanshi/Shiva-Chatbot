@@ -1,6 +1,6 @@
 import { ChatAnthropic } from "@langchain/anthropic";
 import { HumanMessage, SystemMessage, AIMessage, BaseMessage } from "@langchain/core/messages";
-import { AIMessageChunk } from "@langchain/core/messages";
+import { AIMessageChunk, MessageContentText, MessageContentImageUrl } from "@langchain/core/messages";
 
 class ClaudeChat {
   private chat: ChatAnthropic;
@@ -14,52 +14,89 @@ class ClaudeChat {
     this.chat = new ChatAnthropic({
       anthropicApiKey: anthropicApiKey,
       modelName: "claude-3-sonnet-20240229",
+      temperature: 0.7,
     });
   }
 
-  async sendMessage(messages: { role: string; content: string }[]): Promise<string> {
+  async sendMessage(history: { role: string; content: string }[]): Promise<string> {
     try {
-      console.log("Formatting messages...");
-      const formattedMessages = messages.map(msg => this.formatMessage(msg));
+      console.log("Processing chat history:", history);
+      const formattedMessages = history.map(msg => this.formatMessage(msg));
 
-      console.log("Invoking ChatAnthropic...");
+      console.log("Sending request to Claude...");
       const response = await this.chat.invoke(formattedMessages);
       
-      console.log("Processing response...");
-      return this.processResponse(response);
+      console.log("Raw Claude response:", response);
+      const processedResponse = this.processResponse(response);
+      console.log("Processed response:", processedResponse);
+      
+      return processedResponse;
     } catch (error) {
-      console.error("Detailed error in Claude chat:", error);
-      if (error instanceof Error) {
-        console.error("Error message:", error.message);
-        console.error("Error stack:", error.stack);
-      }
-      throw new Error(`Failed to get response from Claude: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      console.error("Error in Claude chat:", error);
+      throw error;
     }
   }
 
   private formatMessage(msg: { role: string; content: string }): BaseMessage {
+    const content = typeof msg.content === 'string' ? msg.content : JSON.stringify(msg.content);
+    
     switch (msg.role.toLowerCase()) {
       case "system":
-        return new SystemMessage(msg.content);
+        return new SystemMessage(content);
       case "human":
       case "user":
-        return new HumanMessage(msg.content);
+        return new HumanMessage(content);
       case "ai":
       case "assistant":
-        return new AIMessage(msg.content);
+        return new AIMessage(content);
       default:
-        throw new Error(`Unsupported message role: ${msg.role}`);
+        console.warn(`Unsupported message role: ${msg.role}, defaulting to user`);
+        return new HumanMessage(content);
     }
   }
 
   private processResponse(response: AIMessageChunk): string {
-    if (typeof response.content === 'string') {
-      return response.content;
-    } else if (Array.isArray(response.content)) {
-      return response.content.map(item => typeof item === 'string' ? item : JSON.stringify(item)).join(' ');
-    } else {
+    try {
+      if (typeof response.content === 'string') {
+        return response.content;
+      }
+      
+      if (Array.isArray(response.content)) {
+        return response.content
+          .map(content => {
+            if (typeof content === 'string') {
+              return content;
+            }
+            
+            // Handle text content
+            if (this.isTextContent(content)) {
+              return content.text;
+            }
+            
+            // Handle image URL content
+            if (this.isImageContent(content)) {
+              return `[Image: ${content.image_url}]`;
+            }
+            
+            return JSON.stringify(content);
+          })
+          .filter(Boolean)
+          .join(' ');
+      }
+      
       return JSON.stringify(response.content);
+    } catch (error) {
+      console.error("Error processing response:", error);
+      throw new Error("Failed to process AI response");
     }
+  }
+
+  private isTextContent(content: any): content is MessageContentText {
+    return content && 'type' in content && content.type === 'text';
+  }
+
+  private isImageContent(content: any): content is MessageContentImageUrl {
+    return content && 'type' in content && content.type === 'image';
   }
 }
 

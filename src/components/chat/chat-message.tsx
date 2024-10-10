@@ -1,99 +1,130 @@
-'use client'
+"use client";
 
-import { cn } from "@/lib/utils"
-import { Message } from "@prisma/client"
-import ReactMarkdown from "react-markdown"
-import { PrismLight as SyntaxHighlighter } from 'react-syntax-highlighter'
-import { tomorrow } from 'react-syntax-highlighter/dist/esm/styles/prism'
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { useAuth } from "@/hooks/useAuth"
-import { Copy, Check } from "lucide-react"
-import { useState } from "react"
-import { Button } from "@/components/ui/button"
+import React, { useState, useRef, useEffect } from "react";
+import { Message, Branch } from "@/types/chat";
+import { updateMessage, createBranch } from "@/lib/api";
+import { useToast } from "@/hooks/use-toast";
+import { VersionControl } from "@/components/chat/VersionControl";
+import { VersionDisplay } from "@/components/chat/VersionDisplay";
+import { MessageContent } from "@/components/chat/MessageContent";
 
-interface ChatMessageProps {
-  message: Message
+interface ChatMessagePairProps {
+  userMessage: Message;
+  aiMessage: Message;
+  onUpdate: (updatedUserMessage: Message, updatedAiMessage: Message) => void;
+  onBranch: (newBranch: Branch) => void;
 }
 
-interface CodeProps {
-  node?: any
-  inline?: boolean
-  className?: string
-  children?: React.ReactNode
-}
+export function ChatMessagePair({
+  userMessage,
+  aiMessage,
+  onUpdate,
+  onBranch,
+}: ChatMessagePairProps) {
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedContent, setEditedContent] = useState(userMessage.content);
+  const [versions, setVersions] = useState<Branch[]>(() => {
+    const savedVersions = localStorage.getItem(`versions-${userMessage.id}`);
+    return savedVersions ? JSON.parse(savedVersions) : [{ userMessage, aiMessage }];
+  });
+  const [currentVersionIndex, setCurrentVersionIndex] = useState(() => {
+    const savedIndex = localStorage.getItem(`currentVersionIndex-${userMessage.id}`);
+    return savedIndex ? parseInt(savedIndex, 10) : 0;
+  });
+  const [showAllVersions, setShowAllVersions] = useState(false);
+  const { toast } = useToast();
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-export function ChatMessage({ message }: ChatMessageProps) {
-  const { session } = useAuth()
-  const [copied, setCopied] = useState(false)
+  useEffect(() => {
+    localStorage.setItem(`versions-${userMessage.id}`, JSON.stringify(versions));
+  }, [versions, userMessage.id]);
 
-  const handleCopy = () => {
-    navigator.clipboard.writeText(message.content)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
-  }
+  useEffect(() => {
+    localStorage.setItem(`currentVersionIndex-${userMessage.id}`, currentVersionIndex.toString());
+  }, [currentVersionIndex, userMessage.id]);
+
+  const handleEdit = () => setIsEditing(true);
+  const handleCancel = () => {
+    setIsEditing(false);
+    setEditedContent(userMessage.content);
+  };
+
+  const handleSend = async () => {
+    try {
+      const updatedMessage = await updateMessage(userMessage.id, editedContent);
+      const newBranch = await createBranch(updatedMessage.id, editedContent);
+      
+      onUpdate(updatedMessage, newBranch.aiMessage);
+      setVersions([...versions, { userMessage: updatedMessage, aiMessage: newBranch.aiMessage }]);
+      setCurrentVersionIndex(versions.length);
+      setIsEditing(false);
+    } catch (error) {
+      console.error("Failed to update message:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update message. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
 
   return (
-    <div
-      className={cn(
-        "flex gap-3 max-w-[850px] mx-auto group",
-        message.role === "user" ? "flex-row-reverse" : "flex-row"
+    <div className="space-y-4">
+      <VersionControl
+        showAllVersions={showAllVersions}
+        setShowAllVersions={setShowAllVersions}
+        currentVersionIndex={currentVersionIndex}
+        setCurrentVersionIndex={setCurrentVersionIndex}
+        versionsCount={versions.length}
+      />
+
+      {showAllVersions ? (
+        versions.map((version, index) => (
+          <VersionDisplay key={index} version={version} index={index} />
+        ))
+      ) : (
+        <div className="space-y-4">
+          <MessageContent
+            message={versions[currentVersionIndex].userMessage}
+            isUser={true}
+            isEditing={isEditing}
+            editedContent={editedContent}
+            setEditedContent={setEditedContent}
+            onEdit={handleEdit}
+            onCancel={handleCancel}
+            onSend={handleSend}
+            onBranch={() => onBranch({ userMessage, aiMessage })}
+            textareaRef={textareaRef}
+          />
+          <MessageContent
+            message={versions[currentVersionIndex].aiMessage}
+            isUser={false}
+            isEditing={false}
+            editedContent=""
+            setEditedContent={() => {}}
+            onBranch={() => onBranch({ userMessage, aiMessage })}
+            textareaRef={textareaRef}
+          />
+        </div>
       )}
-    >
-      <Avatar className="h-8 w-8">
-        {message.role === "user" ? (
-          <>
-            <AvatarImage src={session?.user?.image || undefined} />
-            <AvatarFallback>
-              {session?.user?.name?.[0]?.toUpperCase()}
-            </AvatarFallback>
-          </>
-        ) : (
-          <>
-            <AvatarImage src="/shiva-avatar.png" />
-            <AvatarFallback>S</AvatarFallback>
-          </>
-        )}
-      </Avatar>
-      <div
-        className={cn(
-          "flex-1 rounded-lg p-4 relative",
-          message.role === "user"
-            ? "bg-primary text-primary-foreground"
-            : "bg-muted"
-        )}
-      >
-        <ReactMarkdown
-          components={{
-            code({ node, inline, className, children, ...props }: CodeProps) {
-              const match = /language-(\w+)/.exec(className || '')
-              return !inline && match ? (
-                <SyntaxHighlighter
-                  style={tomorrow}
-                  language={match[1]}
-                  PreTag="div"
-                  {...props}
-                >
-                  {String(children).replace(/\n$/, '')}
-                </SyntaxHighlighter>
-              ) : (
-                <code className={className} {...props}>
-                  {children}
-                </code>
-              )
-            },
-          }}
-        >
-          {message.content}
-        </ReactMarkdown>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
-          onClick={handleCopy}
-        >
-          {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-        </Button>
-      </div>
+
+      {isEditing && (
+        <div className="space-y-4">
+          <h3 className="text-sm font-medium text-muted-foreground">New Version</h3>
+          <MessageContent
+            message={{ ...userMessage, content: editedContent }}
+            isUser={true}
+            isEditing={true}
+            editedContent={editedContent}
+            setEditedContent={setEditedContent}
+            onEdit={handleEdit}
+            onCancel={handleCancel}
+            onSend={handleSend}
+            onBranch={() => onBranch({ userMessage, aiMessage })}
+            textareaRef={textareaRef}
+          />
+        </div>
+      )}
     </div>
-  )
+  );
 }

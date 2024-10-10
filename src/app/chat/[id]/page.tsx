@@ -1,3 +1,4 @@
+
 import { ChatContainer } from "@/components/chat/chat-container"
 import { prisma } from "@/lib/prisma"
 import { getServerSession } from "next-auth"
@@ -37,3 +38,4 @@ export default async function ChatPage({ params }: ChatPageProps) {
 
   return <ChatContainer chatId={chat.id} initialMessages={chat.messages} />
 }
+

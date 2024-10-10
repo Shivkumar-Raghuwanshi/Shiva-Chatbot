@@ -10,6 +10,7 @@ Shiva Chatbot is a ChatGPT clone built with modern web technologies. It provides
 - **Dark/Light Theme**: Customizable user interface for comfortable viewing in any lighting condition.
 - **Responsive Design**: Seamless experience across desktop and mobile devices.
 - **Persistent Data Storage**: User data and chat history stored securely in a database.
+- **Message Branching**: Edit original prompts, view previous versions, and see related follow-up messages for each conversation branch.
 
 ## Tech Stack
 
@@ -78,6 +79,22 @@ Before you begin, ensure you have the following installed:
 2. Start a new chat session or continue an existing one.
 3. Type your message and interact with the AI chatbot.
 4. Use the theme toggle to switch between light and dark modes.
+5. Utilize the message branching feature to edit prompts and explore conversation branches.
+
+## Message Branching
+
+The message branching functionality allows users to have more control over their conversation flow:
+
+- **Edit Original Prompts**: Users can modify their initial messages to explore different conversation directions.
+- **Version History**: View previous versions of edited messages to track changes.
+- **Branch Visualization**: See related follow-up messages for each branch of the conversation.
+- **Seamless Navigation**: Easily switch between different conversation branches.
+
+To use message branching:
+1. Hover over a message you've sent.
+2. Click the edit icon to modify the message.
+3. Submit the edited message to create a new branch.
+4. Use the branch selector to switch between different conversation paths.
 
 ## Deployment
 

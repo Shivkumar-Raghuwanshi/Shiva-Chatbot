@@ -1,3 +1,5 @@
+// src\components\skeletons\message-skeleton.tsx
+
 import { Skeleton } from "@/components/ui/skeleton"
 
 export function MessageSkeleton() {
