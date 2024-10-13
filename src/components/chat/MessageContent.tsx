@@ -15,6 +15,7 @@ interface MessageContentProps {
   message: Message;
   isUser: boolean;
   isEditing: boolean;
+  isLoading: boolean;
   editedContent: string;
   setEditedContent: (content: string) => void;
   onEdit?: () => void;
@@ -28,6 +29,7 @@ export const MessageContent: React.FC<MessageContentProps> = ({
   message,
   isUser,
   isEditing,
+  isLoading,
   editedContent,
   setEditedContent,
   onEdit,
@@ -104,6 +106,7 @@ export const MessageContent: React.FC<MessageContentProps> = ({
             message={message}
             isUser={isUser}
             isEditing={isEditing}
+            isLoading={isLoading}
             onEdit={onEdit}
             onCancel={onCancel}
             onSend={onSend}

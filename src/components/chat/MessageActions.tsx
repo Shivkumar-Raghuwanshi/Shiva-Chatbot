@@ -1,9 +1,10 @@
+
 "use client";
 
 import React from 'react';
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Copy, Edit2, Reply, X, Send } from "lucide-react";
+import { Copy, Edit2, Reply, X, Send, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Message } from '@/types/chat';
 import { useToast } from "@/hooks/use-toast";
@@ -12,6 +13,7 @@ interface MessageActionsProps {
   message: Message;
   isUser: boolean;
   isEditing: boolean;
+  isLoading: boolean;
   onEdit?: () => void;
   onCancel?: () => void;
   onSend?: () => void;
@@ -22,6 +24,7 @@ export const MessageActions: React.FC<MessageActionsProps> = ({
   message,
   isUser,
   isEditing,
+  isLoading,
   onEdit,
   onCancel,
   onSend,
@@ -84,6 +87,7 @@ export const MessageActions: React.FC<MessageActionsProps> = ({
             variant="ghost"
             onClick={onCancel}
             className="h-7 px-2 text-sm"
+            disabled={isLoading}
           >
             <X className="h-3 w-3 mr-1" /> Cancel
           </Button>
@@ -91,8 +95,15 @@ export const MessageActions: React.FC<MessageActionsProps> = ({
             size="sm"
             onClick={onSend}
             className="h-7 px-2 text-sm"
+            disabled={isLoading}
           >
-            <Send className="h-3 w-3 mr-1" /> Send
+            {isLoading ? (
+              <Loader2 className="h-3 w-3 animate-spin" />
+            ) : (
+              <>
+                <Send className="h-3 w-3 mr-1" /> Send
+              </>
+            )}
           </Button>
         </div>
       )}

@@ -11,7 +11,6 @@ export const VersionDisplay: React.FC<VersionDisplayProps> = ({ version, index }
   const userTextareaRef = useRef<HTMLTextAreaElement>(null);
   const aiTextareaRef = useRef<HTMLTextAreaElement>(null);
 
-  // These are placeholder functions. Replace them with actual implementations if needed.
   const noop = () => {};
 
   return (
@@ -21,8 +20,12 @@ export const VersionDisplay: React.FC<VersionDisplayProps> = ({ version, index }
         message={version.userMessage} 
         isUser={true} 
         isEditing={false}
+        isLoading={false}
         editedContent={version.userMessage.content}
         setEditedContent={noop}
+        onEdit={noop}
+        onCancel={noop}
+        onSend={noop}
         onBranch={noop}
         textareaRef={userTextareaRef}
       />
@@ -30,8 +33,12 @@ export const VersionDisplay: React.FC<VersionDisplayProps> = ({ version, index }
         message={version.aiMessage} 
         isUser={false} 
         isEditing={false}
+        isLoading={false}
         editedContent={version.aiMessage.content}
         setEditedContent={noop}
+        onEdit={noop}
+        onCancel={noop}
+        onSend={noop}
         onBranch={noop}
         textareaRef={aiTextareaRef}
       />

@@ -22,6 +22,7 @@ export function ChatMessagePair({
   onBranch,
 }: ChatMessagePairProps) {
   const [isEditing, setIsEditing] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [editedContent, setEditedContent] = useState(userMessage.content);
   const [versions, setVersions] = useState<Branch[]>(() => {
     const savedVersions = localStorage.getItem(`versions-${userMessage.id}`);
@@ -50,6 +51,7 @@ export function ChatMessagePair({
   };
 
   const handleSend = async () => {
+    setIsLoading(true);
     try {
       const updatedMessage = await updateMessage(userMessage.id, editedContent);
       const newBranch = await createBranch(updatedMessage.id, editedContent);
@@ -65,6 +67,8 @@ export function ChatMessagePair({
         description: "Failed to update message. Please try again.",
         variant: "destructive",
       });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -88,6 +92,7 @@ export function ChatMessagePair({
             message={versions[currentVersionIndex].userMessage}
             isUser={true}
             isEditing={isEditing}
+            isLoading={isLoading}
             editedContent={editedContent}
             setEditedContent={setEditedContent}
             onEdit={handleEdit}
@@ -100,26 +105,9 @@ export function ChatMessagePair({
             message={versions[currentVersionIndex].aiMessage}
             isUser={false}
             isEditing={false}
+            isLoading={false}
             editedContent=""
             setEditedContent={() => {}}
-            onBranch={() => onBranch({ userMessage, aiMessage })}
-            textareaRef={textareaRef}
-          />
-        </div>
-      )}
-
-      {isEditing && (
-        <div className="space-y-4">
-          <h3 className="text-sm font-medium text-muted-foreground">New Version</h3>
-          <MessageContent
-            message={{ ...userMessage, content: editedContent }}
-            isUser={true}
-            isEditing={true}
-            editedContent={editedContent}
-            setEditedContent={setEditedContent}
-            onEdit={handleEdit}
-            onCancel={handleCancel}
-            onSend={handleSend}
             onBranch={() => onBranch({ userMessage, aiMessage })}
             textareaRef={textareaRef}
           />
