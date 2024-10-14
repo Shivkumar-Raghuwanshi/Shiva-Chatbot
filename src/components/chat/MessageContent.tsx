@@ -81,7 +81,7 @@ export const MessageContent: React.FC<MessageContentProps> = ({
           </AvatarFallback>
         </Avatar>
 
-        <div className="space-y-1">
+        <div className="space-y-1 w-full">
           <Card className={cn(
             "shadow-sm transition-all duration-200",
             isUser && !isEditing ? "bg-primary text-primary-foreground" : "bg-card",
